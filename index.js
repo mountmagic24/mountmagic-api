@@ -1,7 +1,9 @@
-const app = require("./src/app");
-const connectDB = require(".src/config/db");
+require("dotenv").config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+});
 
-require("dotenv").config();
+const app = require("./src/app");
+const connectDB = require("./src/config/db");
 
 const PORT = process.env.PORT || 5000;
 const dbURI = process.env.MONGO_URI;

@@ -1,9 +1,10 @@
 const express = require("express");
-
 const app = express();
 
 app.use(express.json());
 
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Mount Magic API running",
@@ -15,7 +16,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 module.exports = app;
