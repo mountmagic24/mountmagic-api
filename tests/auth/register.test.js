@@ -35,4 +35,16 @@ describe("Auth Register", () => {
     });
     expect(res.statusCode).toBe(400);
   });
+  test("password should be hashed in databse", async () => {
+    await request(app).post("/api/auth/register").send({
+      name: "Devansh",
+      email: "hash@test.com",
+      password: "123456",
+    });
+
+    const user = await User.findOne({ email: "hash@test.com" });
+
+    expect(user).not.toBeNull();
+    expect(user.password).not.toBe("123456");
+  });
 });
