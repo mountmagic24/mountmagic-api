@@ -1,26 +1,11 @@
-const express = require("express");
-require("dotenv").config();
+const app = require("./src/app");
+const connectDB = require(".src/config/db");
 
-const connectDB = require("./config/db");
+require("dotenv").config();
 
 const PORT = process.env.PORT || 5000;
 const dbURI = process.env.MONGO_URI;
 
-app = express();
-// Add root route
-app.get("/", (req, res) => {
-  res.json({
-    message: "Mount Magic API",
-    version: "1.0.0",
-    endpoints: {
-      health: "/health",
-    },
-  });
-});
-
-app.get("/health", (req, res) => {
-  res.json({ status: "healthy", timestamp: new Date().toISOString() });
-});
 connectDB(dbURI)
   .then(() => {
     app.listen(PORT, () => {
