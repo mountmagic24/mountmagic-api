@@ -1,6 +1,7 @@
 const request = require("supertest");
 const app = require("../../src/app");
 const mongoose = require("mongoose");
+const User = require("../../src/models/User");
 
 describe("Auth Register", () => {
   it("should register a new user", async () => {
@@ -19,7 +20,7 @@ describe("Auth Register", () => {
       email: "duplicate@test.com",
       password: "123456",
     });
-    const res = await require(app).post("/api/auth/register").send({
+    const res = await request(app).post("/api/auth/register").send({
       name: "Devansh",
       email: "duplicate@test.com",
       password: "123456",
