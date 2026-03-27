@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const generateToken = require("../utils/generateToken");
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -23,6 +23,7 @@ exports.registerUser = async (req, res) => {
       password,
     });
 
+    const token = generateToken(user._id);
     res.status(201).json({
       user: {
         id: user._id,
@@ -60,7 +61,15 @@ exports.loginUser = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" },
     );
-    res.status(200).json({ token });
+    res.status(200).json({
+      message: "Login Successfull",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "server error" });
