@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request Flow | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>End-to-End Request Lifecycle</h1>
+        <p>From client to database and back.</p>
+      </header>
+
+      <section class="card">
+        <h2>Step-by-Step</h2>
+        <ol>
+          <li><strong>Client</strong> crafts HTTP request with JSON body and optional JWT header.</li>
+          <li><strong>Express Router</strong> in <code>src/routes</code> matches path/verb and queues middleware + controller.</li>
+          <li><strong>Middleware</strong> (<code>protect</code>) verifies JWT, loads user, attaches <code>req.user</code> or returns 401.</li>
+          <li><strong>Controller</strong> validates input, guards ObjectId, orchestrates model calls, and builds response.</li>
+          <li><strong>Model</strong> (Mongoose) enforces schema, runs hooks (password hashing), executes queries.</li>
+          <li><strong>MongoDB</strong> persists/retrieves documents.</li>
+          <li><strong>Response</strong> returns structured JSON with success flag and data or error message.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Visual Flow</h2>
+        <div class="flow">
+          <div class="step">Client</div>
+          <div class="step">Route</div>
+          <div class="step">Middleware</div>
+          <div class="step">Controller</div>
+          <div class="step">Model</div>
+          <div class="step">MongoDB</div>
+          <div class="step">Response</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Example: POST /api/services</h2>
+        <ol>
+          <li>Client sends JSON body (title, description, price, category) and <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+          <li>Route <code>router.post("/", protect, createService)</code> matches.</li>
+          <li><code>protect</code> decodes JWT, fetches user, attaches <code>req.user</code>.</li>
+          <li><code>createService</code> validates required fields, constructs doc with <code>createdBy</code>, saves via Mongoose.</li>
+          <li>Mongoose applies schema rules; MongoDB stores document.</li>
+          <li>Controller returns <code>201</code> with <code>{ success: true, data: { service } }</code>.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Example: GET /api/users/profile</h2>
+        <ol>
+          <li>Client sends GET with Authorization header.</li>
+          <li>Route uses <code>protect</code> then <code>getProfile</code>.</li>
+          <li>Middleware verifies token, attaches user.</li>
+          <li>Controller fetches user by <code>req.user.id</code> excluding password; 404 if missing.</li>
+          <li>Returns <code>200</code> with <code>data.user</code>.</li>
+        </ol>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

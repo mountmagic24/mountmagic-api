@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>Architecture & Request Flow</h1>
+        <p>How the backend is layered and how requests travel through it.</p>
+      </header>
+
+      <section class="card">
+        <h2>Layered Design</h2>
+        <ul>
+          <li><strong>Entry</strong>: index.js loads env, connects DB, starts Express.</li>
+          <li><strong>App</strong>: app.js builds Express instance, JSON middleware, mounts routers.</li>
+          <li><strong>Routes</strong>: map HTTP verbs/paths to controllers; no business logic.</li>
+          <li><strong>Middleware</strong>: auth guard attaches user for protected routes.</li>
+          <li><strong>Controllers</strong>: validate, orchestrate models, craft responses.</li>
+          <li><strong>Models</strong>: Mongoose schemas with validation and hooks (password hashing).</li>
+          <li><strong>Database</strong>: MongoDB Atlas (URI via env).</li>
+          <li><strong>Tests</strong>: Jest + Supertest assert contract at HTTP boundary.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Request Flow (text diagram)</h2>
+        <div class="flow">
+          <div class="step">Client</div>
+          <div class="step">Express Router</div>
+          <div class="step">Auth Middleware (optional)</div>
+          <div class="step">Controller</div>
+          <div class="step">Model / Mongoose</div>
+          <div class="step">MongoDB</div>
+          <div class="step">Response</div>
+        </div>
+        <p>Protected requests must carry <code>Authorization: Bearer &lt;token&gt;</code>. Middleware verifies token and loads the user. Controllers trust <code>req.user</code> when present and perform domain logic.</p>
+      </section>
+
+      <section class="card">
+        <h2>Error and Security Posture</h2>
+        <ul>
+          <li><strong>401</strong> for missing/invalid JWT (middleware) or no user match.</li>
+          <li><strong>400</strong> for missing required fields at controller level.</li>
+          <li><strong>404</strong> for not found or invalid ObjectId.</li>
+          <li><strong>409</strong> for duplicate resources (email uniqueness).</li>
+          <li><strong>Password hashing</strong> in model pre-save hook; never returned.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Why this Architecture</h2>
+        <ul>
+          <li>Predictable separation of concerns improves readability and onboarding.</li>
+          <li>Auth concerns centralized in one middleware instead of scattered checks.</li>
+          <li>Models encapsulate hashing to prevent controller mistakes.</li>
+          <li>Tests at HTTP boundary guarantee integration correctness.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

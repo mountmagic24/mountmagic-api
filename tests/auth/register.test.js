@@ -26,7 +26,7 @@ describe("Auth Register", () => {
       password: "123456",
     });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(409);
   });
 
   test("should fail if required fields missing", async () => {

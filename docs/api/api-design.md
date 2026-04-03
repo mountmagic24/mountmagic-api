@@ -157,354 +157,93 @@ Public
 
 Response
 
-{
-"success": true,
-"data": {
-"title": "Exploring Mount Paget",
-"content": "Mount Paget is the highest peak...",
-"author": "Admin",
-"tags": ["travel", "mountains"]
+# API Design
+
+Base URL prefix: `/api`
+Auth header: `Authorization: Bearer <token>` for protected routes
+Content-Type: `application/json`
+
+## Conventions
+- Success: `{ "success": true, "data": { ... } }`
+- Error: `{ "success": false, "message": "..." }`
+
+## Authentication
+### POST /api/auth/register
+Registers a user.
+Body:
+```
+{ "name": "Jane", "email": "jane@example.com", "password": "secret" }
+```
+Responses: 201 created; 400 missing fields; 409 duplicate email.
+
+### POST /api/auth/login
+Authenticates and returns JWT.
+Body:
+```
+{ "email": "jane@example.com", "password": "secret" }
+```
+Responses: 200 with `data.token` and `data.user`; 401 invalid credentials; 404 user not found.
+
+## Users (protected)
+### GET /api/users/profile
+Returns the authenticated user.
+Responses: 200 with `data.user`; 401 missing/invalid token; 404 user not found.
+
+### PUT /api/users/profile
+Updates name, email, and/or password.
+Body (any subset):
+```
+{ "name": "New", "email": "new@example.com", "password": "newpass" }
+```
+Responses: 200 updated user; 401 unauthorized; 404 user not found; 409 email in use.
+
+## Services
+Public reads, protected writes.
+
+### GET /api/services
+List services. 200 with `data.services`.
+
+### GET /api/services/:id
+Fetch one. 200 with `data.service`; 404 invalid/missing.
+
+### POST /api/services (protected)
+Create service.
+Body:
+```
+{ "title": "Climbing", "description": "Guided climbs", "price": 120, "category": "outdoors" }
+```
+Responses: 201 created; 400 missing title/description; 401 unauthorized.
+
+### PUT /api/services/:id (protected)
+Update service fields. 200 updated; 401 unauthorized; 404 missing/invalid id.
+
+### DELETE /api/services/:id (protected)
+Delete service. 200 deleted; 401 unauthorized; 404 missing/invalid id.
+
+## Blogs
+Public reads, protected writes.
+
+### GET /api/blogs
+List blogs. 200 with `data.blogs`.
+
+### GET /api/blogs/:id
+Fetch one. 200 with `data.blog`; 404 invalid/missing.
+
+### POST /api/blogs (protected)
+Create blog.
+Body:
+```
+{ "title": "Trip Report", "content": "Snowy and clear skies." }
+```
+Responses: 201 created; 400 missing title/content; 401 unauthorized.
+
+### PUT /api/blogs/:id (protected)
+Update blog. 200 updated; 401 unauthorized; 404 missing/invalid id.
+
+### DELETE /api/blogs/:id (protected)
+Delete blog. 200 deleted; 401 unauthorized; 404 missing/invalid id.
+
+## Health
+### GET /health
+Simple liveness probe. 200 with status/uptime.
 }
-}
-
----
-
-## 2.4 Update Blog
-
-Updates an existing blog post.
-
-Endpoint
-
-PUT /api/blogs/:id
-
-Access
-
-Admin only
-
-Request Body
-
-{
-"title": "Updated Blog Title",
-"content": "Updated blog content"
-}
-
-Response
-
-{
-"success": true,
-"message": "Blog updated successfully"
-}
-
----
-
-## 2.5 Delete Blog
-
-Deletes a blog post.
-
-Endpoint
-
-DELETE /api/blogs/:id
-
-Access
-
-Admin only
-
-Response
-
-{
-"success": true,
-"message": "Blog deleted successfully"
-}
-
----
-
-# 3. Taxi APIs
-
-This section defines API endpoints related to taxi booking and management within the Mount Paget system.
-
-The taxi service allows users to request rides while administrators can manage ride requests.
-
----
-
-## 3.1 Create Taxi Booking
-
-Creates a new taxi booking request.
-
-Endpoint
-
-POST /api/taxi/book
-
-Access
-
-Authenticated users
-
-Request Body
-
-{
-"pickupLocation": "Shimla Bus Stand",
-"dropLocation": "Mount Paget Base Camp",
-"pickupTime": "2026-03-25T10:30:00Z",
-"passengers": 2,
-"contactNumber": "+91XXXXXXXXXX"
-}
-
-Response
-
-{
-"success": true,
-"message": "Taxi booking created successfully",
-"data": {
-"bookingId": "TX239847"
-}
-}
-
----
-
-## 3.2 Get All Taxi Bookings
-
-Fetches all taxi bookings.
-
-Endpoint
-
-GET /api/taxi/bookings
-
-Access
-
-Admin only
-
-Response
-
-{
-"success": true,
-"data": [
-{
-"bookingId": "TX239847",
-"pickupLocation": "Shimla Bus Stand",
-"dropLocation": "Mount Paget Base Camp",
-"status": "pending"
-}
-]
-}
-
----
-
-## 3.3 Get Taxi Booking By ID
-
-Fetch a single taxi booking.
-
-Endpoint
-
-GET /api/taxi/bookings/:id
-
-Access
-
-Admin or booking user
-
-Response
-
-{
-"success": true,
-"data": {
-"bookingId": "TX239847",
-"pickupLocation": "Shimla Bus Stand",
-"dropLocation": "Mount Paget Base Camp",
-"pickupTime": "2026-03-25T10:30:00Z",
-"passengers": 2,
-"status": "pending"
-}
-}
-
----
-
-## 3.4 Update Booking Status
-
-Allows admin to update taxi booking status.
-
-Endpoint
-
-PATCH /api/taxi/bookings/:id/status
-
-Access
-
-Admin only
-
-Request Body
-
-{
-"status": "confirmed"
-}
-
-Response
-
-{
-"success": true,
-"message": "Booking status updated"
-}
-
----
-
-## 3.5 Cancel Taxi Booking
-
-Allows a user to cancel a taxi booking.
-
-Endpoint
-
-DELETE /api/taxi/bookings/:id
-
-Access
-
-Authenticated user
-
-Response
-
-{
-"success": true,
-"message": "Taxi booking cancelled successfully"
-}
-
----
-
-# 4. Document Services APIs
-
-This section defines APIs related to document service requests in the Mount Paget system.
-
-Users can request official services such as document preparation or assistance, and administrators can review and manage those requests.
-
----
-
-## 4.1 Create Document Service Request
-
-Creates a new document service request.
-
-Endpoint
-
-POST /api/documents/request
-
-Access
-
-Authenticated users
-
-Request Body
-
-{
-"fullName": "Rahul Sharma",
-"email": "<rahul@example.com>",
-"serviceType": "Visa Assistance",
-"description": "Need help preparing visa documentation"
-}
-
-Response
-
-{
-"success": true,
-"message": "Document service request submitted successfully",
-"data": {
-"requestId": "DOC12983"
-}
-}
-
----
-
-## 4.2 Get All Document Requests
-
-Fetches all document service requests.
-
-Endpoint
-
-GET /api/documents
-
-Access
-
-Admin only
-
-Response
-
-{
-"success": true,
-"data": [
-{
-"requestId": "DOC12983",
-"fullName": "Rahul Sharma",
-"serviceType": "Visa Assistance",
-"status": "pending"
-}
-]
-}
-
----
-
-## 4.3 Get Document Request By ID
-
-Fetch a single document service request.
-
-Endpoint
-
-GET /api/documents/:id
-
-Access
-
-Admin
-
-Response
-
-{
-"success": true,
-"data": {
-"requestId": "DOC12983",
-"fullName": "Rahul Sharma",
-"email": "<rahul@example.com>",
-"serviceType": "Visa Assistance",
-"description": "Need help preparing visa documentation",
-"status": "pending"
-}
-}
-
----
-
-## 4.4 Update Request Status
-
-Allows admin to update the request status.
-
-Endpoint
-
-PATCH /api/documents/:id/status
-
-Access
-
-Admin only
-
-Request Body
-
-{
-"status": "completed"
-}
-
-Response
-
-{
-"success": true,
-"message": "Request status updated successfully"
-}
-
----
-
-## 4.5 Delete Document Request
-
-Deletes a document request.
-
-Endpoint
-
-DELETE /api/documents/:id
-
-Access
-
-Admin only
-
-Response
-
-{
-"success": true,
-"message": "Document request deleted successfully"
-}
-
----

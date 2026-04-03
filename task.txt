@@ -1,2 +1,0 @@
-POST /api/auth/login
-using bcrypt and jsonwebtoken

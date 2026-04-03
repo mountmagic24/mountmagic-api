@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mount Magic API Docs | Overview</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>Backend Overview</h1>
+        <p>What this backend does, the problems it solves, and the technologies behind it.</p>
+      </header>
+
+      <section class="card">
+        <h2>Purpose</h2>
+        <p>Mount Magic API is a production-style REST backend providing authentication, protected user profiles, service listings, blog content, and health checks. It demonstrates clean layering with Express, MongoDB, JWT auth, and comprehensive tests.</p>
+        <div class="grid">
+          <div>
+            <span class="badge">Problems solved</span>
+            <ul>
+              <li>User onboarding and authentication (JWT)</li>
+              <li>Secure access to user profile data</li>
+              <li>CRUD for services (platform offerings)</li>
+              <li>CRUD for blogs (content publishing)</li>
+              <li>Liveness endpoints for monitoring</li>
+            </ul>
+          </div>
+          <div>
+            <span class="badge">Key qualities</span>
+            <ul>
+              <li>MVC-like structure with thin controllers</li>
+              <li>Protected routes via middleware</li>
+              <li>Schema-driven validation through Mongoose</li>
+              <li>End-to-end Jest + Supertest coverage</li>
+              <li>Env-driven config for prod/test separation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tech Stack</h2>
+        <div class="grid">
+          <div>
+            <span class="badge">Runtime</span> Node.js (CommonJS)
+          </div>
+          <div>
+            <span class="badge">Web</span> Express 5
+          </div>
+          <div>
+            <span class="badge">Database</span> MongoDB + Mongoose
+          </div>
+          <div>
+            <span class="badge">Auth</span> JWT + bcrypt hashing
+          </div>
+          <div>
+            <span class="badge">Config</span> dotenv (.env, .env.test)
+          </div>
+          <div>
+            <span class="badge">Testing</span> Jest + Supertest (runInBand)
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>High-Level Design</h2>
+        <div class="flow">
+          <div class="step">Client</div>
+          <div class="step">Express Route</div>
+          <div class="step">Middleware (auth)</div>
+          <div class="step">Controller</div>
+          <div class="step">Mongoose Model</div>
+          <div class="step">MongoDB</div>
+          <div class="step">JSON Response</div>
+        </div>
+        <p>Routes stay declarative, middleware centralizes cross-cutting concerns, controllers coordinate validation and data access, and models enforce schema rules and hashing. Tests assert behavior at the HTTP boundary.</p>
+      </section>
+
+      <section class="card">
+        <h2>Navigation</h2>
+        <p>Use the sidebar to dive into architecture, folder responsibilities, full API reference with examples, detailed code walkthroughs, database schemas, testing strategy, and end-to-end request flow.</p>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

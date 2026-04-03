@@ -8,6 +8,14 @@ describe("Protected Route", () => {
     expect(res.statusCode).toBe(401);
   });
 
+  test("should reject request with invalid token", async () => {
+    const res = await request(app)
+      .get("/api/users/profile")
+      .set("Authorization", "Bearer invalid.token.value");
+
+    expect(res.statusCode).toBe(401);
+  });
+
   test("should allow request with valid token", async () => {
     const register = await request(app).post("/api/auth/register").send({
       name: "Devansh",

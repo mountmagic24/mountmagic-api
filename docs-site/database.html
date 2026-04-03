@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>Database & Schemas</h1>
+        <p>MongoDB via Mongoose with schemas, fields, and relationships.</p>
+      </header>
+
+      <section class="card">
+        <h2>User</h2>
+        <div class="code-block"><code>{
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ["admin","cd_manager","taxi_manager","content_manager","user"], default: "user" }
+} (timestamps)</code></div>
+        <ul>
+          <li><strong>Hashing</strong>: pre-save hook hashes passwords with bcrypt.</li>
+          <li><strong>Uniqueness</strong>: email unique to prevent duplicates.</li>
+          <li><strong>Roles</strong>: enum enables RBAC extension later.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Service</h2>
+        <div class="code-block"><code>{
+  title: { type: String, required: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  price: { type: Number, default: 0, min: 0 },
+  category: { type: String, trim: true },
+  createdBy: { type: ObjectId, ref: "User" }
+} (timestamps)</code></div>
+        <ul>
+          <li><strong>Required</strong>: title and description enforce meaningful entries.</li>
+          <li><strong>Price</strong>: non-negative with default 0.</li>
+          <li><strong>Relation</strong>: optional createdBy reference to User for ownership.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Blog</h2>
+        <div class="code-block"><code>{
+  title: { type: String, required: true, trim: true },
+  content: { type: String, required: true, trim: true },
+  author: { type: ObjectId, ref: "User" }
+} (timestamps)</code></div>
+        <ul>
+          <li><strong>Required</strong>: title and content.</li>
+          <li><strong>Relation</strong>: optional author reference to User.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Indexes & Validation</h2>
+        <ul>
+          <li>Email unique index on User (via <code>unique: true</code>).</li>
+          <li>Built-in validation: required fields, enum for role, min for price, trim for strings.</li>
+          <li>ObjectId validity checks happen in controllers before querying.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

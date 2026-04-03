@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Explanation | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>Line-by-Line Guide</h1>
+        <p>Mirrors the style of “Understand NearbyNews”: every line shows the code and a plain-English reason it exists.</p>
+      </header>
+
+      <section class="card">
+        <h2>1) Entry Point — index.js</h2>
+        <p class="muted">Path: index.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-3</div>
+            <div class="line-code"><code>require("dotenv").config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+});</code></div>
+            <div class="line-notes">Loads environment variables; swaps to .env.test when NODE_ENV is set to test so the suite never hits prod creds.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">5-6</div>
+            <div class="line-code"><code>const app = require("./src/app");
+const connectDB = require("./src/config/db");</code></div>
+            <div class="line-notes">Pulls in the Express app and the Mongo connection helper.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">8-9</div>
+            <div class="line-code"><code>const PORT = process.env.PORT || 5000;
+const dbURI = process.env.MONGO_URI;</code></div>
+            <div class="line-notes">Reads runtime config: port to listen on and MongoDB URI.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">11-17</div>
+            <div class="line-code"><code>connectDB(dbURI)
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server Running on ${PORT}`);
+    });
+  })</code></div>
+            <div class="line-notes">Opens the DB connection first; only boots the HTTP server after Mongo is ready.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">18-20</div>
+            <div class="line-code"><code>.catch((err) => {
+  console.error(`Database connection failed: ${err}`);
+});</code></div>
+            <div class="line-notes">Fails fast and logs the reason instead of starting a broken server.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2) Express App — src/app.js</h2>
+        <p class="muted">Path: src/app.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const express = require("express");
+const app = express();</code></div>
+            <div class="line-notes">Creates the Express application instance.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4</div>
+            <div class="line-code"><code>app.use(express.json());</code></div>
+            <div class="line-notes">Enables JSON body parsing for all routes.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">6-9</div>
+            <div class="line-code"><code>const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
+const blogRoutes = require("./routes/blogRoutes");</code></div>
+            <div class="line-notes">Imports route modules. serviceRoutes/blogRoutes must exist on disk; otherwise the app will crash at require-time.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">10-13</div>
+            <div class="line-code"><code>app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/blogs", blogRoutes);</code></div>
+            <div class="line-notes">Mounts each router under its API prefix; all downstream handlers inherit JSON parsing.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">15-23</div>
+            <div class="line-code"><code>app.get("/", (req, res) => {
+  res.json({
+    message: "Mount Magic API running",
+    version: "1.0.0",
+    endpoints: { health: "/health" },
+  });
+});</code></div>
+            <div class="line-notes">Landing route that proves the app is alive and advertises the health endpoint.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">25-31</div>
+            <div class="line-code"><code>app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});</code></div>
+            <div class="line-notes">Health check with uptime and ISO timestamp for monitoring.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">33</div>
+            <div class="line-code"><code>module.exports = app;</code></div>
+            <div class="line-notes">Exports the configured app so index.js can start it or tests can reuse it.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3) Auth Middleware — src/middlewares/authMiddleware.js</h2>
+        <p class="muted">Path: src/middlewares/authMiddleware.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const jwt = require("jsonwebtoken");
+const User = require("../models/User");</code></div>
+            <div class="line-notes">Brings in JWT verification and the User model to look up identities.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4</div>
+            <div class="line-code"><code>const protect = async (req, res, next) => {</code></div>
+            <div class="line-notes">Middleware wrapper; async so it can await DB lookups.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">5-8</div>
+            <div class="line-code"><code>const authHeader = req.headers.authorization;
+if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  return res.status(401).json({ error: "Unauthorized" });
+}</code></div>
+            <div class="line-notes">Rejects immediately if no Bearer token is supplied.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">10</div>
+            <div class="line-code"><code>const token = authHeader.split(" ")[1];</code></div>
+            <div class="line-notes">Extracts the raw JWT portion.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">12-16</div>
+            <div class="line-code"><code>const decoded = jwt.verify(token, process.env.JWT_SECRET);
+const user = await User.findById(decoded.id).select("-password");
+if (!user) {
+  return res.status(401).json({ error: "Unauthorized" });
+}</code></div>
+            <div class="line-notes">Verifies signature with the secret, then fetches the user minus the password; aborts if the user no longer exists.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">18-23</div>
+            <div class="line-code"><code>req.user = {
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  role: user.role,
+};
+return next();</code></div>
+            <div class="line-notes">Attaches a safe user payload for downstream handlers and advances the pipeline.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">24-26</div>
+            <div class="line-code"><code>} catch (error) {
+  return res.status(401).json({ error: "Invalid token" });
+}</code></div>
+            <div class="line-notes">Any verification error surfaces as a 401.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">28</div>
+            <div class="line-code"><code>module.exports = protect;</code></div>
+            <div class="line-notes">Exports middleware for router use.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4) JWT Utility — src/utils/generateToken.js</h2>
+        <p class="muted">Path: src/utils/generateToken.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1</div>
+            <div class="line-code"><code>const jwt = require("jsonwebtoken");</code></div>
+            <div class="line-notes">Imports the signing library.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">3-6</div>
+            <div class="line-code"><code>const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES || "1h",
+  });
+};</code></div>
+            <div class="line-notes">Creates a short helper that signs user IDs with a configurable TTL (defaults to one hour).</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">8</div>
+            <div class="line-code"><code>module.exports = generateToken;</code></div>
+            <div class="line-notes">Shared across controllers.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>5) Auth Controller — src/controllers/authController.js</h2>
+        <p class="muted">Path: src/controllers/authController.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-3</div>
+            <div class="line-code"><code>const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const generateToken = require("../utils/generateToken");</code></div>
+            <div class="line-notes">Pulls in data access, password hashing, and JWT helper.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4</div>
+            <div class="line-code"><code>exports.registerUser = async (req, res) => {</code></div>
+            <div class="line-notes">Entry to handle POST /register.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">6-15</div>
+            <div class="line-code"><code>const { name, email, password } = req.body;
+if (!name || !email || !password) {
+  return res.status(400).json({ success: false, message: "All fields required" });
+}
+const existingUser = await User.findOne({ email });
+if (existingUser) {
+  return res.status(409).json({ success: false, message: "User already exists" });
+}</code></div>
+            <div class="line-notes">Validates payload and enforces unique email before creation.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">16-27</div>
+            <div class="line-code"><code>const user = await User.create({ name, email, password });
+res.status(201).json({
+  success: true,
+  data: { user: { id: user._id, name: user.name, email: user.email, role: user.role } },
+  user: { id: user._id, name: user.name, email: user.email, role: user.role },
+});</code></div>
+            <div class="line-notes">Creates the user (password hashes via model hook) and responds with a safe payload.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">28-33</div>
+            <div class="line-code"><code>} catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Server error",
+  });
+}</code></div>
+            <div class="line-notes">Fallback for unexpected failures.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">35</div>
+            <div class="line-code"><code>exports.loginUser = async (req, res) => {</code></div>
+            <div class="line-notes">Entry to handle POST /login.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">37-52</div>
+            <div class="line-code"><code>const { email, password } = req.body;
+if (!email || !password) {
+  return res.status(400).json({ success: false, message: "Email and password are required" });
+}
+const user = await User.findOne({ email });
+if (!user) return res.status(404).json({ success: false, message: "User not found" });
+const isMatch = await bcrypt.compare(password, user.password);
+if (!isMatch) return res.status(401).json({ success: false, message: "Invalid credentials" });</code></div>
+            <div class="line-notes">Validates input, checks existence, and compares password hashes.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">54-67</div>
+            <div class="line-code"><code>const token = generateToken(user._id);
+res.status(200).json({
+  success: true,
+  data: { token, user: { id: user._id, name: user.name, email: user.email, role: user.role } },
+  token,
+  user: { id: user._id, name: user.name, email: user.email, role: user.role },
+});</code></div>
+            <div class="line-notes">Issues a JWT and returns it alongside user details (duplicated keys are kept for backward compatibility).</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">68-72</div>
+            <div class="line-code"><code>} catch (err) {
+  console.error(err);
+  res.status(500).json({ success: false, message: "Server error" });
+}</code></div>
+            <div class="line-notes">Logs and reports unexpected login errors.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>6) User Controller — src/controllers/userController.js</h2>
+        <p class="muted">Path: src/controllers/userController.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1</div>
+            <div class="line-code"><code>const User = require("../models/User");</code></div>
+            <div class="line-notes">Model import for profile queries and updates.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">3</div>
+            <div class="line-code"><code>const getProfile = async (req, res) => {</code></div>
+            <div class="line-notes">Reads the authenticated user profile.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4-10</div>
+            <div class="line-code"><code>const user = await User.findById(req.user.id).select("-password");
+if (!user) {
+  return res.status(404).json({ success: false, message: "User not found" });
+}
+return res.status(200).json({ success: true, data: { user } });</code></div>
+            <div class="line-notes">Fetches by id (set by protect), strips password, and returns 404 when missing.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">12-15</div>
+            <div class="line-code"><code>} catch (error) {
+  return res.status(500).json({ success: false, message: "Server error" });
+}</code></div>
+            <div class="line-notes">Standard server error path.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">17</div>
+            <div class="line-code"><code>const updateProfile = async (req, res) => {</code></div>
+            <div class="line-notes">Handles PUT /profile to edit name/email/password.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">18-28</div>
+            <div class="line-code"><code>const user = await User.findById(req.user.id);
+if (!user) {
+  return res.status(404).json({ success: false, message: "User not found" });
+}
+const { name, email, password } = req.body;
+if (email && email !== user.email) {
+  const emailExists = await User.findOne({ email });
+  if (emailExists) {
+    return res.status(409).json({ success: false, message: "Email already in use" });
+  }
+  user.email = email;
+}</code></div>
+            <div class="line-notes">Guards against missing users and duplicate emails before applying changes.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">30-35</div>
+            <div class="line-code"><code>if (name) user.name = name;
+if (password) user.password = password;
+await user.save();
+const safeUser = { id: user._id.toString(), name: user.name, email: user.email, role: user.role };
+return res.status(200).json({ success: true, data: { user: safeUser } });</code></div>
+            <div class="line-notes">Applies partial updates; password re-hashes in model pre-save hook; returns a safe view.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">36-39</div>
+            <div class="line-code"><code>} catch (error) {
+  return res.status(500).json({ success: false, message: "Server error" });
+}</code></div>
+            <div class="line-notes">Error handling path.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">41</div>
+            <div class="line-code"><code>module.exports = { getProfile, updateProfile };</code></div>
+            <div class="line-notes">Exports for the router.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>7) Routes — src/routes</h2>
+        <p class="muted">authRoutes.js and userRoutes.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">auth:1-4</div>
+            <div class="line-code"><code>const express = require("express");
+const router = express.Router();
+const { registerUser, loginUser } = require("../controllers/authController");</code></div>
+            <div class="line-notes">Sets up an isolated router and brings in auth handlers.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">auth:6-7</div>
+            <div class="line-code"><code>router.post("/register", registerUser);
+router.post("/login", loginUser);</code></div>
+            <div class="line-notes">Defines the only two auth endpoints.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">auth:9</div>
+            <div class="line-code"><code>module.exports = router;</code></div>
+            <div class="line-notes">Exports router for mounting in app.js.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">user:1-4</div>
+            <div class="line-code"><code>const express = require("express");
+const route = express.Router();
+const protect = require("../middlewares/authMiddleware");
+const { getProfile, updateProfile } = require("../controllers/userController");</code></div>
+            <div class="line-notes">Creates a user router and adds the auth guard plus controller imports.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">user:6-7</div>
+            <div class="line-code"><code>route.get("/profile", protect, getProfile);
+route.put("/profile", protect, updateProfile);</code></div>
+            <div class="line-notes">Profile read/update routes both protected by JWT middleware.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">user:9</div>
+            <div class="line-code"><code>module.exports = route;</code></div>
+            <div class="line-notes">Exports router to be mounted at /api/users.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>8) User Model — src/models/User.js</h2>
+        <p class="muted">Path: src/models/User.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");</code></div>
+            <div class="line-notes">Imports ODM and hashing utility.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4-20</div>
+            <div class="line-code"><code>const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: {
+      type: String,
+      enum: ["admin", "cd_manager", "taxi_manager", "content_manager", "user"],
+      default: "user",
+    },
+  },
+  { timestamps: true },
+);</code></div>
+            <div class="line-notes">Schema definition with required fields, unique email, role enum, and automatic created/updated timestamps.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">21-26</div>
+            <div class="line-code"><code>userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});</code></div>
+            <div class="line-notes">Pre-save hook re-hashes passwords only when they change.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">28</div>
+            <div class="line-code"><code>module.exports = mongoose.model("User", userSchema);</code></div>
+            <div class="line-notes">Registers the model for use across controllers and middleware.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>9) DB Connection — src/config/db.js</h2>
+        <p class="muted">Path: src/config/db.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1</div>
+            <div class="line-code"><code>const mongoose = require("mongoose");</code></div>
+            <div class="line-notes">Imports the driver/ODM.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">3-9</div>
+            <div class="line-code"><code>const connectDB = async (URI) => {
+  try {
+    const conn = await mongoose.connect(URI);
+    console.log(`MongoDB Connected`);
+  } catch (err) {
+    console.log(err.message);
+  }
+};</code></div>
+            <div class="line-notes">Async helper that connects using provided URI and logs either success or the error message.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">11</div>
+            <div class="line-code"><code>module.exports = connectDB;</code></div>
+            <div class="line-notes">Exported for index.js and tests.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>10) Test Bootstrapping — tests/setup.js</h2>
+        <p class="muted">Path: tests/setup.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const mongoose = require("mongoose");
+require("dotenv").config({ path: ".env.test" });</code></div>
+            <div class="line-notes">Loads test-only env vars and the ODM before tests start.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4-7</div>
+            <div class="line-code"><code>beforeAll(async () => {
+  const uri = process.env.MONGO_URI;
+  await mongoose.connect(uri);
+}, 20000);</code></div>
+            <div class="line-notes">Connects once for the suite; timeout bumped to 20s for slower Atlas spins.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">9-13</div>
+            <div class="line-code"><code>afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+});</code></div>
+            <div class="line-notes">Cleans every collection between tests to keep isolation.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">15-17</div>
+            <div class="line-code"><code>afterAll(async () => {
+  await mongoose.connection.close();
+});</code></div>
+            <div class="line-notes">Closes the DB connection once all tests finish.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>11) Health Tests — tests/health.test.js</h2>
+        <p class="muted">Path: tests/health.test.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const request = require("supertest");
+const app = require("../src/app");</code></div>
+            <div class="line-notes">Brings in supertest to drive HTTP calls against the Express app instance.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4</div>
+            <div class="line-code"><code>describe("Health Check", () => {</code></div>
+            <div class="line-notes">Test suite wrapper for health endpoints.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">5-10</div>
+            <div class="line-code"><code>test("GET /health should return server status", async () => {
+  const res = await request(app).get("/health");
+  expect(res.statusCode).toBe(200);
+  expect(res.body).toHaveProperty("status");
+});</code></div>
+            <div class="line-notes">Calls /health and asserts HTTP 200 plus presence of a status field.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">11-15</div>
+            <div class="line-code"><code>test("GET / should return welcome message", async () => {
+  const res = await request(app).get("/");
+  expect(res.statusCode).toBe(200);
+});
+});</code></div>
+            <div class="line-notes">Confirms root route responds OK; suite closes on line 15.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>12) Register Tests — tests/auth/register.test.js</h2>
+        <p class="muted">Path: tests/auth/register.test.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-4</div>
+            <div class="line-code"><code>const request = require("supertest");
+const app = require("../../src/app");
+const mongoose = require("mongoose");
+const User = require("../../src/models/User");</code></div>
+            <div class="line-notes">Imports HTTP test helper, app, ODM, and User model (used directly for duplicate/hash checks).</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">6</div>
+            <div class="line-code"><code>describe("Auth Register", () => {</code></div>
+            <div class="line-notes">Suite for registration scenarios.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">7-13</div>
+            <div class="line-code"><code>it("should register a new user", async () => {
+  const res = await request(app)
+    .post("/api/auth/register")
+    .send({ name: "Devansh", email: "dev@test.com", password: "123456" });
+  expect(res.statusCode).toBe(201);
+  expect(res.body).toHaveProperty("user");
+  expect(res.body.user.email).toBe("dev@test.com");
+});</code></div>
+            <div class="line-notes">Happy path: posts registration payload, expects 201 and email echo.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">15-25</div>
+            <div class="line-code"><code>test("should not allow duplicate email", async () => {
+  await User.create({ name: "Devansh", email: "duplicate@test.com", password: "123456" });
+  const res = await request(app).post("/api/auth/register").send({
+    name: "Devansh",
+    email: "duplicate@test.com",
+    password: "123456",
+  });
+  expect(res.statusCode).toBe(409);
+});</code></div>
+            <div class="line-notes">Seeds a user directly, then re-registers to ensure 409 conflict is returned.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">27-32</div>
+            <div class="line-code"><code>test("should fail if required fields missing", async () => {
+  const res = await request(app).post("/api/auth/register").send({
+    email: "test@test.com",
+  });
+  expect(res.statusCode).toBe(400);
+});</code></div>
+            <div class="line-notes">Sends partial payload to confirm 400 validation response.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">33-44</div>
+            <div class="line-code"><code>test("password should be hashed in databse", async () => {
+  await request(app).post("/api/auth/register").send({
+    name: "Devansh",
+    email: "hash@test.com",
+    password: "123456",
+  });
+  const user = await User.findOne({ email: "hash@test.com" });
+  expect(user).not.toBeNull();
+  expect(user.password).not.toBe("123456");
+});
+});</code></div>
+            <div class="line-notes">Registers, then queries Mongo directly to assert the password got hashed; closes suite on line 44.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>13) Login Tests — tests/auth/login.test.js</h2>
+        <p class="muted">Path: tests/auth/login.test.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-3</div>
+            <div class="line-code"><code>const request = require("supertest");
+const app = require("../../src/app");
+const User = require("../../src/models/User");</code></div>
+            <div class="line-notes">Imports test HTTP client, app, and model (User is unused here but available).</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">5</div>
+            <div class="line-code"><code>describe("Auth Login", () => {</code></div>
+            <div class="line-notes">Suite for login cases.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">6-16</div>
+            <div class="line-code"><code>test("Should login user with correct credentials", async () => {
+  await request(app).post("/api/auth/register").send({
+    name: "Devansh",
+    email: "login@test.com",
+    password: "123456",
+  });
+  const res = await request(app).post("/api/auth/login").send({
+    email: "login@test.com",
+    password: "123456",
+  });
+  expect(res.statusCode).toBe(200);
+  expect(res.body).toHaveProperty("token");
+});</code></div>
+            <div class="line-notes">Registers then logs in to assert 200 and presence of JWT token.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">18-28</div>
+            <div class="line-code"><code>test("should fail with wrong password", async () => {
+  await request(app).post("/api/auth/register").send({
+    name: "Devansh",
+    email: "wrong@test.com",
+    password: "123456",
+  });
+  const res = await request(app).post("/api/auth/login").send({
+    email: "wrong@test.com",
+    password: "wrongpass",
+  });
+  expect(res.statusCode).toBe(401);
+});</code></div>
+            <div class="line-notes">Verifies bad password returns 401 unauthorized.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">29-34</div>
+            <div class="line-code"><code>test("should fail if user does not exist", async () => {
+  const res = await request(app).post("/api/auth/login").send({
+    email: "nouser@test.com",
+    password: "123456",
+  });
+  expect(res.statusCode).toBe(404);
+});
+});</code></div>
+            <div class="line-notes">Login against missing account should return 404; suite ends on line 34.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>14) Protect Middleware Tests — tests/auth/protect.test.js</h2>
+        <p class="muted">Path: tests/auth/protect.test.js</p>
+        <div class="line-list">
+          <div class="line-row">
+            <div class="line-no">1-2</div>
+            <div class="line-code"><code>const request = require("supertest");
+const app = require("../../src/app");</code></div>
+            <div class="line-notes">Imports supertest and the app to hit protected routes.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">4</div>
+            <div class="line-code"><code>describe("Protected Route", () => {</code></div>
+            <div class="line-notes">Suite for JWT guard behavior.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">5-9</div>
+            <div class="line-code"><code>test("should reject request without token", async () => {
+  const res = await request(app).get("/api/users/profile");
+  expect(res.statusCode).toBe(401);
+});</code></div>
+            <div class="line-notes">No Authorization header should yield 401.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">11-17</div>
+            <div class="line-code"><code>test("should reject request with invalid token", async () => {
+  const res = await request(app)
+    .get("/api/users/profile")
+    .set("Authorization", "Bearer invalid.token.value");
+  expect(res.statusCode).toBe(401);
+});</code></div>
+            <div class="line-notes">Malformed/invalid JWT also returns 401.</div>
+          </div>
+          <div class="line-row">
+            <div class="line-no">19-33</div>
+            <div class="line-code"><code>test("should allow request with valid token", async () => {
+  const register = await request(app).post("/api/auth/register").send({
+    name: "Devansh",
+    email: "jwt@test.com",
+    password: "123456",
+  });
+  const login = await request(app).post("/api/auth/login").send({
+    email: "jwt@test.com",
+    password: "123456",
+  });
+  const token = login.body.token;
+  const res = await request(app)
+    .get("/api/users/profile")
+    .set("Authorization", `Bearer ${token}`);
+  expect(res.statusCode).toBe(200);
+});
+});</code></div>
+            <div class="line-notes">Full flow: register user, login to obtain JWT, call protected profile with Bearer token, expect 200; suite closes on line 33.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

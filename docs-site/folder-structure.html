@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Folder Structure | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>Project Structure</h1>
+        <p>Folder responsibilities and why this layout is used.</p>
+      </header>
+
+      <section class="card">
+        <h2>Tree</h2>
+        <div class="code-block tree-block"><code>index.js
+src/
+  app.js
+  config/
+    db.js
+  controllers/
+    authController.js
+    userController.js
+  middlewares/
+    authMiddleware.js
+  models/
+    User.js
+  routes/
+    authRoutes.js
+    userRoutes.js
+  utils/
+    generateToken.js
+
+tests/
+  setup.js
+  health.test.js
+  auth/
+    register.test.js
+    login.test.js
+    protect.test.js
+
+docs/
+  ... (architecture and API docs)
+docs-site/
+  ... (static site you are reading)</code></div>
+      </section>
+
+      <section class="card">
+        <h2>Responsibilities</h2>
+        <ul>
+          <li><strong>index.js</strong>: Entry point. Loads env, connects DB, starts server.</li>
+          <li><strong>src/app.js</strong>: Builds Express app, applies middleware, mounts routers, health checks.</li>
+          <li><strong>config/</strong>: DB connection helpers.</li>
+          <li><strong>routes/</strong>: URL to controller mapping; no business logic.</li>
+          <li><strong>controllers/</strong>: Request handling logic, validation, DB orchestration.</li>
+          <li><strong>models/</strong>: Mongoose schemas, validation, hooks (e.g., password hashing).</li>
+          <li><strong>middlewares/</strong>: Cross-cutting concerns (auth guard).</li>
+          <li><strong>utils/</strong>: Focused helpers (JWT token generation).</li>
+          <li><strong>tests/</strong>: Jest + Supertest suites validating API behavior.</li>
+          <li><strong>docs/</strong>: Markdown docs; <strong>docs-site/</strong> is this static site.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Why This Layout</h2>
+        <ul>
+          <li>Keeps HTTP boundary (routes) separate from business logic (controllers).</li>
+          <li>Models remain single-source-of-truth for data shape and hashing.</li>
+          <li>Middlewares remain reusable and composable.</li>
+          <li>Tests live next to features for discoverability.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

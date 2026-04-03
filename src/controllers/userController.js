@@ -1,24 +1,51 @@
 const User = require("../models/User");
-const getProfile = (req, res) => {
-  res.status(200).json({
-    user: req.user,
-  });
-};
 
-const getCurrentUser = async (req, res) => {
+const getProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    res.status(200).json({
-      user,
-    });
+
+    return res.status(200).json({ success: true, data: { user } });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-module.exports = { getProfile };
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { name, email, password } = req.body;
+
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(409).json({ success: false, message: "Email already in use" });
+      }
+      user.email = email;
+    }
+
+    if (name) user.name = name;
+    if (password) user.password = password;
+
+    await user.save();
+
+    const safeUser = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    return res.status(200).json({ success: true, data: { user: safeUser } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+module.exports = { getProfile, updateProfile };

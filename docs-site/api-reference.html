@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference | Mount Magic API Docs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Mount Magic API</h1>
+    <div class="nav-section">
+      <h2>Guide</h2>
+      <ul class="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="architecture.html">Architecture</a></li>
+        <li><a href="folder-structure.html">Folder Structure</a></li>
+        <li><a href="api-reference.html">API Reference</a></li>
+        <li><a href="code-explanation.html">Code Explanation</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="request-flow.html">Request Flow</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <header class="page-header">
+        <h1>API Reference</h1>
+        <p>Endpoints, payloads, controllers, and example requests/responses.</p>
+      </header>
+
+      <section class="card">
+        <h2>Auth</h2>
+        <table class="table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Controller</th></tr></thead>
+          <tbody>
+            <tr><td>POST</td><td>/api/auth/register</td><td>Register a user</td><td>authController.registerUser</td></tr>
+            <tr><td>POST</td><td>/api/auth/login</td><td>Login and receive JWT</td><td>authController.loginUser</td></tr>
+          </tbody>
+        </table>
+        <details open>
+          <summary>POST /api/auth/register</summary>
+          <p><strong>Request JSON</strong></p>
+          <div class="code-block"><code>{
+  "name": "Jane",
+  "email": "jane@example.com",
+  "password": "secret123"
+}</code></div>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "64f...",
+      "name": "Jane",
+      "email": "jane@example.com",
+      "role": "user"
+    }
+  }
+}</code></div>
+          <p>Errors: 400 missing fields; 409 duplicate email; 500 server error.</p>
+        </details>
+        <details>
+          <summary>POST /api/auth/login</summary>
+          <p><strong>Request JSON</strong></p>
+          <div class="code-block"><code>{
+  "email": "jane@example.com",
+  "password": "secret123"
+}</code></div>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "token": "<jwt>",
+    "user": {
+      "id": "64f...",
+      "name": "Jane",
+      "email": "jane@example.com",
+      "role": "user"
+    }
+  }
+}</code></div>
+          <p>Errors: 400 missing fields; 401 invalid credentials; 404 user not found; 500 server error.</p>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Users (protected)</h2>
+        <table class="table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Controller</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td>/api/users/profile</td><td>Get current user</td><td>userController.getProfile</td></tr>
+            <tr><td>PUT</td><td>/api/users/profile</td><td>Update current user</td><td>userController.updateProfile</td></tr>
+          </tbody>
+        </table>
+        <details open>
+          <summary>GET /api/users/profile</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "64f...",
+      "name": "User",
+      "email": "user@test.com",
+      "role": "user"
+    }
+  }
+}</code></div>
+          <p>Errors: 401 missing/invalid token; 404 user not found.</p>
+        </details>
+        <details>
+          <summary>PUT /api/users/profile</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p><strong>Request JSON</strong></p>
+          <div class="code-block"><code>{
+  "name": "New Name",
+  "email": "new@example.com",
+  "password": "newpass"
+}</code></div>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "64f...",
+      "name": "New Name",
+      "email": "new@example.com",
+      "role": "user"
+    }
+  }
+}</code></div>
+          <p>Errors: 401 unauthorized; 404 user not found; 409 email in use.</p>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Services</h2>
+        <table class="table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Controller</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td>/api/services</td><td>List services</td><td>serviceController.getServices</td></tr>
+            <tr><td>GET</td><td>/api/services/:id</td><td>Get a service</td><td>serviceController.getServiceById</td></tr>
+            <tr><td>POST</td><td>/api/services</td><td>Create service (auth)</td><td>serviceController.createService</td></tr>
+            <tr><td>PUT</td><td>/api/services/:id</td><td>Update service (auth)</td><td>serviceController.updateService</td></tr>
+            <tr><td>DELETE</td><td>/api/services/:id</td><td>Delete service (auth)</td><td>serviceController.deleteService</td></tr>
+          </tbody>
+        </table>
+        <details open>
+          <summary>POST /api/services</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p><strong>Request JSON</strong></p>
+          <div class="code-block"><code>{
+  "title": "Climbing",
+  "description": "Guided climbs",
+  "price": 120,
+  "category": "outdoors"
+}</code></div>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "service": {
+      "_id": "64f...",
+      "title": "Climbing",
+      "description": "Guided climbs",
+      "price": 120,
+      "category": "outdoors",
+      "createdBy": "64f..."
+    }
+  }
+}</code></div>
+          <p>Errors: 400 missing title/description; 401 unauthorized.</p>
+        </details>
+        <details>
+          <summary>GET /api/services/:id</summary>
+          <p>Returns 200 with service or 404 if missing/invalid id.</p>
+        </details>
+        <details>
+          <summary>PUT /api/services/:id</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <div class="code-block"><code>{ "description": "Updated desc" }</code></div>
+          <p>Errors: 401 unauthorized; 404 not found/invalid id.</p>
+        </details>
+        <details>
+          <summary>DELETE /api/services/:id</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p>200 on delete; 401 unauthorized; 404 not found/invalid id.</p>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Blogs</h2>
+        <table class="table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Controller</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td>/api/blogs</td><td>List blogs</td><td>blogController.getBlogs</td></tr>
+            <tr><td>GET</td><td>/api/blogs/:id</td><td>Get a blog</td><td>blogController.getBlogById</td></tr>
+            <tr><td>POST</td><td>/api/blogs</td><td>Create blog (auth)</td><td>blogController.createBlog</td></tr>
+            <tr><td>PUT</td><td>/api/blogs/:id</td><td>Update blog (auth)</td><td>blogController.updateBlog</td></tr>
+            <tr><td>DELETE</td><td>/api/blogs/:id</td><td>Delete blog (auth)</td><td>blogController.deleteBlog</td></tr>
+          </tbody>
+        </table>
+        <details open>
+          <summary>POST /api/blogs</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p><strong>Request JSON</strong></p>
+          <div class="code-block"><code>{
+  "title": "Trip Report",
+  "content": "Snowy and clear skies."
+}</code></div>
+          <p><strong>Response JSON</strong></p>
+          <div class="code-block"><code>{
+  "success": true,
+  "data": {
+    "blog": {
+      "_id": "64f...",
+      "title": "Trip Report",
+      "content": "Snowy and clear skies.",
+      "author": "64f..."
+    }
+  }
+}</code></div>
+          <p>Errors: 400 missing title/content; 401 unauthorized.</p>
+        </details>
+        <details>
+          <summary>GET /api/blogs/:id</summary>
+          <p>200 with blog; 404 invalid/missing id.</p>
+        </details>
+        <details>
+          <summary>PUT /api/blogs/:id</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p>200 updated blog; 401 unauthorized; 404 not found/invalid id.</p>
+        </details>
+        <details>
+          <summary>DELETE /api/blogs/:id</summary>
+          <p>Headers: Authorization: Bearer &lt;token&gt;</p>
+          <p>200 on delete; 401 unauthorized; 404 not found/invalid id.</p>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Health</h2>
+        <details open>
+          <summary>GET /health</summary>
+          <p>Returns liveness info.</p>
+          <div class="code-block"><code>{ "status": "ok", "uptime": 123.45, "timestamp": "2026-03-28T...Z" }</code></div>
+        </details>
+        <details>
+          <summary>GET /</summary>
+          <p>Returns welcome message and version metadata.</p>
+        </details>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

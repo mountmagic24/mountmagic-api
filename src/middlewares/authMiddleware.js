@@ -1,27 +1,33 @@
 const jwt = require("jsonwebtoken");
-// const User = require("../models/User");
+const User = require("../models/User");
 
 const protect = async (req, res, next) => {
-  let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-    try {
-      const decode = jwt.verify(token, process.env.JWT_SECRET);
-      // const user = await User.findById(decode.id).select("-password");
-      // if (!user) {
-      //   return res.status(404).json({ message: "User not found " });
-      // }
-      req.user = decode;
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: "Not Authorized" });
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    if (!token) {
-      return res.status(401).json({ message: "No token Provided" });
-    }
+
+    req.user = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    return next();
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
 

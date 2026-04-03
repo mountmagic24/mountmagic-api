@@ -5,8 +5,12 @@ app.use(express.json());
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
+const blogRoutes = require("./routes/blogRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/blogs", blogRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Mount Magic API running",
