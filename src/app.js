@@ -11,7 +11,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/blogs", blogRoutes);
-app.get("/", (req, res) => {
+app.get("/api/", (req, res) => {
   res.json({
     message: "Mount Magic API running",
     version: "1.0.0",
@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     uptime: process.uptime(),
