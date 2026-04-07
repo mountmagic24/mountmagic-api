@@ -78,6 +78,9 @@ web_modules/
 .env.*
 !.env.example
 
+# Temporary upload directory
+temp-uploads/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
