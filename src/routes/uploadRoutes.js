@@ -34,7 +34,7 @@ router.post("/cs", protect, upload.single("file"), async (req, res) => {
 
     try {
       // Upload to Cloudinary in cs_uploads folder
-      const imageData = await cloudinaryService.uploadImage(
+      const imageData = await cloudinaryService.uploadFile(
         req.file.path,
         "cs_uploads"
       );

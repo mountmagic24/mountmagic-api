@@ -24,16 +24,24 @@ const storage = multer.diskStorage({
 });
 
 /**
- * File filter: Only allow images
+ * File filter: Allow common image and document formats
  */
 const fileFilter = (req, file, cb) => {
-  // Allowed image MIME types
-  const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const allowedMimes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+  ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed (jpeg, png, gif, webp)"), false);
+    cb(new Error("Only images and document files are allowed (jpeg, png, gif, webp, pdf, doc, docx, txt)"), false);
   }
 };
 
